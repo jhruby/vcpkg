@@ -2,9 +2,10 @@ vcpkg_fail_port_install(ON_TARGET "UWP")
 
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
-    REPO zeromq/libzmq
-    REF v4.3.4
-    SHA512 ad828b1ab5a87983285a6b44b08240816ed1c4e2c73306ab1a851bf80df1892b5e2f92064a49fbadc1f4c75043625ace77dd25b64d5d1c2a7d1d61cc916fba0b
+    REPO jhruby/libzmq
+	REF 822098ce17189c5ad2c3fd16cb015f3592370bf3
+	SHA512 f128fb241f1c4818a42c0abd2a6c2f588615ec086482d3719d9d7784b9039caa71e9e65ae114d4e862ae2c5702ed7ab64721906c159893ccb8605a4e661c2bc3
+	HEAD_REF master
     PATCHES fix-arm.patch
 )
 
