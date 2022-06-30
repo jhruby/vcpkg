@@ -42,14 +42,15 @@ https://github.blog/2019-02-14-introducing-draft-pull-requests/
 
 At this time, the following helpers are deprecated:
 
-1. `vcpkg_extract_source_archive()` should be replaced by [`vcpkg_extract_source_archive_ex()`](vcpkg_extract_source_archive_ex.md)
-2. `vcpkg_apply_patches()` should be replaced by the `PATCHES` arguments to the "extract" helpers (e.g. [`vcpkg_from_github()`](vcpkg_from_github.md))
-3. `vcpkg_build_msbuild()` should be replaced by [`vcpkg_install_msbuild()`](vcpkg_install_msbuild.md)
-4. `vcpkg_copy_tool_dependencies()` should be replaced by [`vcpkg_copy_tools()`](vcpkg_copy_tools.md)
-5. `vcpkg_configure_cmake` should be replaced by [`vcpkg_cmake_configure()`](ports/vcpkg-cmake/vcpkg_cmake_configure.md#vcpkg_cmake_configure) after removing `PREFER_NINJA` (from port [`vcpkg-cmake`](ports/vcpkg-cmake.md#vcpkg-cmake))
-6. `vcpkg_build_cmake` should be replaced by [`vcpkg_cmake_build()`](ports/vcpkg-cmake/vcpkg_cmake_build.md#vcpkg_cmake_build) (from port [`vcpkg-cmake`](ports/vcpkg-cmake.md#vcpkg-cmake))
-7. `vcpkg_install_cmake` should be replaced by [`vcpkg_cmake_install()`](ports/vcpkg-cmake/vcpkg_cmake_install.md#vcpkg_cmake_install) (from port [`vcpkg-cmake`](ports/vcpkg-cmake.md#vcpkg-cmake))
-8. `vcpkg_fixup_cmake_targets` should be replaced by [`vcpkg_cmake_config_fixup`](ports/vcpkg-cmake-config/vcpkg_cmake_config_fixup.md#vcpkg_cmake_config_fixup) (from port [`vcpkg-cmake-config`](ports/vcpkg-cmake-config.md#vcpkg-cmake-config))
+- [`vcpkg_extract_source_archive_ex()`](vcpkg_extract_source_archive_ex.md) should be replaced by the supported overload of [`vcpkg_extract_source_archive()`] (with `ARCHIVE`)
+- The deprecated overload of [`vcpkg_extract_source_archive()`] without `ARCHIVE` should be replaced by the supported overload with `ARCHIVE`.
+- `vcpkg_apply_patches()` should be replaced by the `PATCHES` arguments to the "extract" helpers (e.g. [`vcpkg_from_github()`](vcpkg_from_github.md))
+- `vcpkg_build_msbuild()` should be replaced by [`vcpkg_install_msbuild()`](vcpkg_install_msbuild.md)
+- `vcpkg_copy_tool_dependencies()` should be replaced by [`vcpkg_copy_tools()`](vcpkg_copy_tools.md)
+- `vcpkg_configure_cmake` should be replaced by [`vcpkg_cmake_configure()`](vcpkg_cmake_configure.md) after removing `PREFER_NINJA` (from port [`vcpkg-cmake`](ports/vcpkg-cmake.md))
+- `vcpkg_build_cmake` should be replaced by [`vcpkg_cmake_build()`](ports/vcpkg-cmake/vcpkg_cmake_build.md#vcpkg_cmake_build) (from port [`vcpkg-cmake`](ports/vcpkg-cmake.md))
+- `vcpkg_install_cmake` should be replaced by [`vcpkg_cmake_install()`](ports/vcpkg-cmake/vcpkg_cmake_install.md#vcpkg_cmake_install) (from port [`vcpkg-cmake`](ports/vcpkg-cmake.md))
+- `vcpkg_fixup_cmake_targets` should be replaced by [`vcpkg_cmake_config_fixup`](ports/vcpkg-cmake-config/vcpkg_cmake_config_fixup.md#vcpkg_cmake_config_fixup) (from port [`vcpkg-cmake-config`](ports/vcpkg-cmake-config.md#vcpkg-cmake-config))
 
 Some of the replacement helper functions are in "tools ports" to allow consumers to pin their
 behavior at specific versions, to allow locking the behavior of the helpers at a particular
@@ -65,6 +66,8 @@ version. Tools ports need to be added to your port's `"dependencies"`, like so:
   "host": true
 }
 ```
+
+[`vcpkg_extract_source_archive()`]: vcpkg_extract_source_archive.md
 
 ### Avoid excessive comments in portfiles
 
@@ -200,16 +203,18 @@ When defining a feature that captures an optional dependency,
 ensure that the dependency will not be used accidentally when the feature is not explicitly enabled.
 
 ```cmake
+set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB ON)
+set(CMAKE_REQUIRE_FIND_PACKAGE_ZLIB OFF)
 if ("zlib" IN_LIST FEATURES)
   set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB OFF)
-else()
-  set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB ON)
+  set(CMAKE_REQUIRE_FIND_PACKAGE_ZLIB ON)
 endif()
 
 vcpkg_cmake_configure(
   SOURCE_PATH ${SOURCE_PATH}
   OPTIONS
     -DCMAKE_DISABLE_FIND_PACKAGE_ZLIB=${CMAKE_DISABLE_FIND_PACKAGE_ZLIB}
+    -DCMAKE_REQUIRE_FIND_PACKAGE_ZLIB=${CMAKE_REQUIRE_FIND_PACKAGE_ZLIB}
 )
 ```
 
@@ -217,6 +222,8 @@ The snippet below using `vcpkg_check_features()` is equivalent,  [see the docume
 
 ```cmake
 vcpkg_check_features(OUT_FEATURE_OPTIONS FEATURE_OPTIONS
+  FEATURES
+    "zlib"    CMAKE_REQUIRE_FIND_PACKAGE_ZLIB
   INVERTED_FEATURES
     "zlib"    CMAKE_DISABLE_FIND_PACKAGE_ZLIB
 )
@@ -228,7 +235,7 @@ vcpkg_cmake_configure(
 )
 ```
 
-Note that `ZLIB` in the above is case-sensitive. See the [cmake documentation](https://cmake.org/cmake/help/v3.15/variable/CMAKE_DISABLE_FIND_PACKAGE_PackageName.html) for more details.
+Note that `ZLIB` in the above is case-sensitive. See the [CMAKE_DISABLE_FIND_PACKAGE_PackageName](https://cmake.org/cmake/help/v3.22/variable/CMAKE_DISABLE_FIND_PACKAGE_PackageName.html) and [CMAKE_REQUIRE_FIND_PACKAGE_PackageName](https://cmake.org/cmake/help/v3.22/variable/CMAKE_REQUIRE_FIND_PACKAGE_PackageName.html) documnetation for more details.
 
 ### Place conflicting libs in a `manual-link` directory
 
@@ -327,6 +334,8 @@ Because of this, it is preferable to patch the buildsystem directly when setting
 ### Minimize patches
 
 When making changes to a library, strive to minimize the final diff. This means you should _not_ reformat the upstream source code when making changes that affect a region. Also, when disabling a conditional, it is better to add a `AND FALSE` or `&& 0` to the condition than to delete every line of the conditional.
+
+Don't add patches if the port is outdated and updating the port to a newer released version would solve the same issue. vcpkg prefers updating ports over patching outdated versions unless the version bump breaks a considerable amount of dependent ports.
 
 This helps to keep the size of the vcpkg repository down as well as improves the likelihood that the patch will apply to future code versions.
 
