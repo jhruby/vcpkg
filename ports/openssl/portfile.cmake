@@ -11,7 +11,7 @@ It can be installed on alpine systems via apk add linux-headers.]]
     )
 endif()
 
-set(OPENSSL_VERSION 3.0.4)
+set(OPENSSL_VERSION 3.0.3)
 
 if (VCPKG_TARGET_IS_WINDOWS AND NOT VCPKG_TARGET_IS_UWP)
     set(OPENSSL_PATCHES "${CMAKE_CURRENT_LIST_DIR}/windows/flags.patch")
@@ -21,7 +21,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO openssl/openssl
     REF openssl-${OPENSSL_VERSION}
-    SHA512 c58b439addbfc0901cb8d99036494bac60d24a4311815b9b7a559f5daaa027d4b83e49e2eb526f0552ec53f09be89081a08c20b8b6f20a2463081cdb071d6faf
+    SHA512 6782119128926db90a48447cbd949859fdcf4120aeb1017fa85d7fbffbe84b3feae7bcfb86e219a30ef241eb998034c340bb62718f59b9e30aa90e647ca7a53e
     PATCHES ${OPENSSL_PATCHES}
 )
 
