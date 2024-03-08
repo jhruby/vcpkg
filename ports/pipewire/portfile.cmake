@@ -2,8 +2,8 @@ vcpkg_from_gitlab(
     GITLAB_URL https://gitlab.freedesktop.org/
     OUT_SOURCE_PATH SOURCE_PATH
     REPO pipewire/pipewire
-    REF 0.3.52
-    SHA512 30e9cf74c92babafe386f02a03bb5c41a8ee5591a02f15845cca1ee44f091ce68eb14d48943d43b680cb525026a19e0290997670f9a82156eaa72e974fe6d01a
+    REF "${VERSION}"
+    SHA512 3884a64ce4d467665d34ee39e84ab394e4fe7c24bc006efe1f6ba78649e9fe3693c65f2173a4b0bf0979786309a5b12bc8b90aab3f6cbc223db596c44d00f4cc
     HEAD_REF master # branch name
 )
 
@@ -11,7 +11,7 @@ vcpkg_configure_meson(
     SOURCE_PATH "${SOURCE_PATH}"
     OPTIONS
         -Dalsa=disabled
-        -Daudioconvert=disabled
+        -Daudioconvert=enabled
         -Daudiomixer=disabled
         -Daudiotestsrc=disabled
         -Davahi=disabled
@@ -75,9 +75,19 @@ vcpkg_install_meson()
 vcpkg_copy_pdbs()
 vcpkg_fixup_pkgconfig()
 
-file(INSTALL "${SOURCE_PATH}/COPYING" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}" RENAME copyright)
+vcpkg_install_copyright(FILE_LIST "${SOURCE_PATH}/COPYING")
 file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/debug/share")
 
 if(VCPKG_LIBRARY_LINKAGE STREQUAL "static")
     file(REMOVE_RECURSE "${CURRENT_PACKAGES_DIR}/bin" "${CURRENT_PACKAGES_DIR}/debug/bin")
 endif()
+
+# remove absolute paths
+file(GLOB config_files "${CURRENT_PACKAGES_DIR}/share/${PORT}/*.conf")
+foreach(file ${config_files})
+    vcpkg_replace_string("${file}" "in ${CURRENT_PACKAGES_DIR}/etc/pipewire for system-wide changes\n# or" "")
+    cmake_path(GET file FILENAME filename)
+    vcpkg_replace_string("${file}" "# ${CURRENT_PACKAGES_DIR}/etc/pipewire/${filename}.d/ for system-wide changes or in" "")
+endforeach()
+vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/share/pipewire/pipewire.conf" "${CURRENT_PACKAGES_DIR}/bin" "")
+vcpkg_replace_string("${CURRENT_PACKAGES_DIR}/share/pipewire/minimal.conf" "${CURRENT_PACKAGES_DIR}/bin" "")
